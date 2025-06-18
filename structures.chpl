@@ -17,8 +17,8 @@ module structures {
     }
 
     class cell {
-        var wall_left: shared wall;
-        var wall_right: shared wall;
+        var wall_left: borrowed wall;
+        var wall_right: borrowed wall;
         var indices: int(64);
         var center: real(64);
         var cell_size: real(64);
