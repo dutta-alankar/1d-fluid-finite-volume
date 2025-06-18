@@ -6,7 +6,8 @@ module structures {
 
     class wall {
         var position: real(64);
-        var state: [state_domain] real(64);
+        var state_prims: [state_domain] real(64);
+        var state_cons: [state_domain] real(64);
 
         proc init (position: real(64)): void {
             this.position = position;
@@ -16,18 +17,20 @@ module structures {
     }
 
     class cell {
-        var left_wall: owned wall;
-        var right_wall: owned wall;
+        var wall_left: shared wall;
+        var wall_right: shared wall;
         var indices: int(64);
         var center: real(64);
         var cell_size: real(64);
 
-        proc init (xleft: real(64), xright: real(64), indices: int(64)): void {
-            this.left_wall  = new owned wall(xleft);
-            this.right_wall = new owned wall(xright);
+        proc init (wall_left: borrowed wall, wall_right: borrowed wall, indices: int(64)): void {
+            this.wall_left  = wall_left;
+            this.wall_right = wall_right;
             this.indices = indices;
-            this.center = 0.5*(this.left_wall.position+this.right_wall.position);
-            this.cell_size = this.right_wall.position-this.left_wall.position;
+            var xleft: real(64)  = this.wall_left.position;
+            var xright: real(64) = this.wall_right.position;
+            this.center = 0.5*(xleft+xright);
+            this.cell_size = xright-xleft;
         }
     }
     /*
@@ -53,10 +56,11 @@ module structures {
         var indx_end_tot: int(64);
         var npoints_tot: int(64);
         // initialize with a dummy
-        var indices: domain(?);
+        var indicesAll: domain(?);
         var indicesInner: domain(?);
         var indicesStag: domain(?);
-        var cells_tot: [indices] owned cell?;
+        var cells_tot: [indicesAll] owned cell?;
+        var walls_tot: [indicesStag] owned wall?;
 
         proc init (xmin: real(64), xmax: real(64), npoints: int(64), nghosts: int(64)): void {
             this.xmin = xmin;
@@ -68,8 +72,8 @@ module structures {
             this.indx_beg_tot = 1;
             this.indx_end_tot = npoints_int + 2*nghosts;
             this.npoints_tot  = this.indx_end_tot;
-            this.indices = stencilDist.createDomain({1..this.npoints_tot}, fluff=(this.nghosts,));
-            this.indicesInner = indices.expand((-this.nghosts,));
+            this.indicesAll = stencilDist.createDomain({1..this.npoints_tot}, fluff=(this.nghosts,));
+            this.indicesInner = this.indicesAll.expand((-this.nghosts,));
             this.indicesStag = stencilDist.createDomain({1..this.npoints_tot+1}, fluff=(this.nghosts,));
             init this; 
             this.create_grid(); 
@@ -78,12 +82,19 @@ module structures {
         proc create_grid (): void {
             // uniform grid
             var dx: real(64) = (this.xmax-this.xmin)/this.npoints_int;
-            var x_left:  [this.indices] real(64) = utilities.linspace(this.xmin-this.nghosts*dx, this.xmax+(this.nghosts-1)*dx, this.npoints_tot, this.indices);
-            var x_right: [this.indices] real(64) = x_left + dx;
-            forall i in this.indices {
-                this.cells_tot[i] = new owned cell(x_left[i], x_right[i], i);
+            var x_left:  [this.indicesAll] real(64) = utilities.linspace(this.xmin-this.nghosts*dx, this.xmax+(this.nghosts-1)*dx, this.npoints_tot, this.indicesAll);
+            var x_right: [this.indicesAll] real(64) = x_left + dx;
+            // create the wall
+            forall i in this.indicesAll {
+                this.walls_tot[i] = new owned wall(x_left[i]);
+            }
+            this.walls_tot[this.indicesStag.high] = new owned wall(x_right[this.indicesAll.high]);
+            // create the cells
+            forall i in this.indicesAll {
+                assert(this.walls_tot[i] != nil, "Problem: Wall "+i:string+" is nil");
+                assert(this.walls_tot[i+1] != nil, "Problem: Wall "+(i+1):string+" is nil");
+                this.cells_tot[i] = new owned cell(this.walls_tot[i]!.borrow(), this.walls_tot[i+1]!.borrow(), i);
             }
         }
-
     }
 }
