@@ -1,2 +1,4 @@
 core*
 *.o
+main
+main_real
