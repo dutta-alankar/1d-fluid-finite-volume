@@ -33,17 +33,7 @@ module structures {
             this.cell_size = xright-xleft;
         }
     }
-    /*
-    class wall {
-        const cell_left: borrowed cell;
-        const cell_right: borrowed cell;
 
-        proc init (cell_left: borrowed cell, cell_right: borrowed cell) {
-            this.cell_left = cell_left;
-            this.cell_right = cell_right;
-        }
-    }
-    */
     class grid {
         /* In my code all indices start from 1 */
         var xmin: real(64);
