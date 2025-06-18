@@ -7,7 +7,7 @@ module structures {
     class wall {
         var position: real(64);
         var state_prims: [state_domain] real(64);
-        var state_cons: [state_domain] real(64);
+        var state_convs: [state_domain] real(64);
 
         proc init (position: real(64)): void {
             this.position = position;
