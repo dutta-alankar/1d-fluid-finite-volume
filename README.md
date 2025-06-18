@@ -1,2 +1,2 @@
 # 1d-fluid-finite-volume
-One dimensional fnite volume solver in Chapel
+One dimensional finite volume solver in `Chapel`
