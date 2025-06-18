@@ -86,8 +86,8 @@ module structures {
                     assert(this.walls_tot[i] != nil, "Problem: Wall "+i:string+" is nil");
                     assert(this.walls_tot[i+1] != nil, "Problem: Wall "+(i+1):string+" is nil");
                     this.cells_tot[i] = new owned cell(this.walls_tot[i]!.borrow(), this.walls_tot[i+1]!.borrow(), i);
+                    this.cells_tot.updateFluff();
                 }
-                this.cells_tot.updateFluff();
             }
         }
     }
