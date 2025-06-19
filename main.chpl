@@ -10,19 +10,19 @@ proc main(args: [] string) {
     var Grid = new owned grid(xmin, xmax, npoints, nghosts);
     writeln("cell centers: ");
     for i in Grid.cells_tot.domain {
-      write(Grid.cells_tot[i]!.center);
+      write(Grid.cells_tot[i].center);
       write(" ");
     }
     writeln();
     writeln("left wall positions: ");
     for i in Grid.cells_tot.domain {
-      write(Grid.cells_tot[i]!.wall_left.position);
+      write(Grid.cells_tot[i].wall_left.position);
       write(" ");
     }
     writeln();
     writeln("right wall positions: ");
     for i in Grid.cells_tot.domain {
-      write(Grid.cells_tot[i]!.wall_right.position);
+      write(Grid.cells_tot[i].wall_right.position);
       write(" ");
     }
     writeln();
