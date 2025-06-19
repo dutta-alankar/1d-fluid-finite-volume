@@ -74,21 +74,33 @@ module structures {
             var x_right: [this.indicesAll] real(64) = x_left + dx;
             // create the wall
             sync {
-                forall i in this.indicesAll {
-                    this.walls_tot[i] = new owned wall(x_left[i]);
+                forall i in this.indicesAll with (ref this) {
+                    on this.walls_tot[i] {
+                        this.walls_tot[i] = new owned wall(x_left[i]);
+                    }
                 }
                 this.walls_tot[this.indicesStag.high] = new owned wall(x_right[this.indicesAll.high]);
-                this.walls_tot.updateFluff();
+            }
+            this.walls_tot.updateFluff();
+            writeln("Walls on locale ", here.id, ":");
+            for i in this.walls_tot.domain {
+                if (this.walls_tot[i] != nil) then
+                    writeln("i=", i, " -> pos=", this.walls_tot[i]!.position);
+                else
+                    writeln("i=", i, " -> nil!");
             }
             // create the cells
             sync {
-                forall i in this.indicesAll {
+                forall i in this.indicesAll with (ref this) {
                     assert(this.walls_tot[i] != nil, "Problem: Wall "+i:string+" is nil");
                     assert(this.walls_tot[i+1] != nil, "Problem: Wall "+(i+1):string+" is nil");
-                    this.cells_tot[i] = new owned cell(this.walls_tot[i]!.borrow(), this.walls_tot[i+1]!.borrow(), i);
-                    this.cells_tot.updateFluff();
+                    on this.cells_tot[i] {
+                        this.cells_tot[i] = new owned cell(this.walls_tot[i]!.borrow(), this.walls_tot[i+1]!.borrow(), i);
+                    }
                 }
             }
+            this.cells_tot.updateFluff();
+
         }
     }
 }
