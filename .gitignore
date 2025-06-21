@@ -2,3 +2,7 @@ core*
 *.o
 main
 main_real
+structures
+structures_real
+utilities
+utilities_real
