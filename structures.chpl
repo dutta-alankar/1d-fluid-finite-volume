@@ -3,6 +3,7 @@ module structures {
     import utilities;
 
     const state_domain: domain(1) = {1..5};
+    config const debug: bool = false;
 
     record wall {
         var position: real(64);
@@ -105,12 +106,14 @@ module structures {
                 this.walls_tot[this.indicesAllStag.high] = new wall(x_right[this.indicesAll.high]);
             }
             sync this.walls_tot.updateFluff();
-            writeln("Wall info for debugging: ");
-            forall i in this.walls_tot.domain {
-                if !this.walls_tot[i].dummy_initialized then
-                    writeln("i=", i, " -> pos=", this.walls_tot[i].position, " at locale ", this.walls_tot[i].locale.id);
-                else
-                    writeln("i=", i, " -> dummy!", " at locale ", this.walls_tot[i].locale.id);
+            if debug {
+                writeln("Wall info for debugging: ");
+                forall i in this.walls_tot.domain {
+                    if !this.walls_tot[i].dummy_initialized then
+                        writeln("i=", i, " -> pos=", this.walls_tot[i].position, " at locale ", this.walls_tot[i].locale.id);
+                    else
+                        writeln("i=", i, " -> dummy!", " at locale ", this.walls_tot[i].locale.id);
+                }
             }
             // create the cells
             sync {
