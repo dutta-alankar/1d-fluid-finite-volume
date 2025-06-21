@@ -69,9 +69,9 @@ module structures {
         var indx_end_tot: int(64);
         var npoints_tot: int(64);
         // initialize with a dummy
-        var indicesAll, indicesInner, indicesStag: domain(?);
+        var indicesAll, indicesInner, indicesAllStag: domain(?);
         var cells_tot: [indicesAll]  cell;
-        var walls_tot: [indicesStag] wall;
+        var walls_tot: [indicesAllStag] wall;
 
         proc init (xmin: real(64), xmax: real(64), npoints: int(64), nghosts: int(64)): void {
             this.xmin = xmin;
@@ -83,9 +83,11 @@ module structures {
             this.indx_beg_tot = 1;
             this.indx_end_tot = npoints_int + 2*nghosts;
             this.npoints_tot  = this.indx_end_tot;
-            this.indicesAll = stencilDist.createDomain({1..this.npoints_tot}, fluff=(this.nghosts,));
+            var indicesAllDomain: domain(1) = {1..this.npoints_tot};
+            this.indicesAll = indicesAllDomain dmapped new stencilDist(indicesAllDomain, fluff=(this.nghosts,));
             this.indicesInner = this.indicesAll.expand((-this.nghosts,));
-            this.indicesStag = stencilDist.createDomain({1..this.npoints_tot+1}, fluff=(this.nghosts,));
+            var indicesAllStagDomain: domain(1) = {1..this.npoints_tot+1};
+            this.indicesAllStag = indicesAllStagDomain dmapped new stencilDist(indicesAllStagDomain, fluff=(this.nghosts,));
             init this; 
             this.create_grid(); 
         }
@@ -100,10 +102,10 @@ module structures {
                 forall i in this.indicesAll {
                     this.walls_tot[i] = new wall(x_left[i]);
                 }
-                this.walls_tot[this.indicesStag.high] = new wall(x_right[this.indicesAll.high]);
+                this.walls_tot[this.indicesAllStag.high] = new wall(x_right[this.indicesAll.high]);
             }
-            this.walls_tot.updateFluff();
-            writeln("Walls on locale ", here.id, ":");
+            sync this.walls_tot.updateFluff();
+            writeln("Wall info for debugging: ");
             forall i in this.walls_tot.domain {
                 if !this.walls_tot[i].dummy_initialized then
                     writeln("i=", i, " -> pos=", this.walls_tot[i].position, " at locale ", this.walls_tot[i].locale.id);
@@ -113,13 +115,12 @@ module structures {
             // create the cells
             sync {
                 forall i in this.indicesAll {
-                    // assert(!this.walls_tot[i].dummy_initialized, "Problem: Wall "+i:string+" is dummy");
-                    // assert(!this.walls_tot[i+1].dummy_initialized, "Problem: Wall "+(i+1):string+" is dummy");
+                    assert(!this.walls_tot[i].dummy_initialized, "Problem: Wall "+i:string+" is dummy");
+                    assert(!this.walls_tot[i+1].dummy_initialized, "Problem: Wall "+(i+1):string+" is dummy");
                     this.cells_tot[i] = new cell(this.walls_tot[i], this.walls_tot[i+1], i); 
                 }
             }
-            this.cells_tot.updateFluff();
-
+            sync this.cells_tot.updateFluff();
         }
     }
 }
