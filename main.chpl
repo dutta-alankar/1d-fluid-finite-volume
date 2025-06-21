@@ -2,7 +2,7 @@ use Help;
 use structures;
 
 proc main(args: [] string) {  
-    var w: wall = new wall();
+    var w: wall;
     const npoints: int(64)  = 5;
     const nghosts:  int(64)  = 2;
     const xmin:    real(64) = 0.0;
