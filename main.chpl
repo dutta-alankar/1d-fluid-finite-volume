@@ -42,11 +42,19 @@ proc main(args: [] string) {
     set_boundary(grid);
     interpolate_edges(grid);
 
+    writeln("Cells: ");
     for i in grid.indicesAll {
       var tag: string = "";
       if !computeDomain.contains(i) then tag = ": boundary";
       writeln("x = ", grid.cells_tot[i].center, ": (", grid.cells_tot[i].state_consv_center, ", ", grid.cells_tot[i].state_prims_center, ")", tag);
     }
+    writeln("Walls: ");
+    for i in grid.indicesAllStag {
+      var tag: string = "";
+      if i==grid.indicesAllStag.low || i==grid.indicesAllStag.high then tag = ": boundary";
+      writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
+  }
+
     /*
     writeln("Left boundary: ");
     forall (i, j) in grid.indicesAll.boundaries(0, -1) {
