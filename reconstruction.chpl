@@ -58,5 +58,6 @@ module reconstruction {
         }
         if debug then writeln("wall ", grid.indicesAllStag.high, ": ", grid.walls_tot[grid.indicesAllStag.high].state_consv_left, "|", grid.walls_tot[grid.indicesAllStag.high].state_consv_right, " at x = ", grid.walls_tot[grid.indicesAllStag.high].position);
         sync grid.walls_tot.updateFluff();
+        sync grid.cells_tot.updateFluff();
     }
 }
