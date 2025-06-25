@@ -3,11 +3,11 @@ module logo {
     proc print_logo (): void {
         // **CHHA** *Chapel-based Hydrodynamics for HPC in Astrophysics*
         writeln("""
-       (  )   (   )  )
-        ) (   )  (  (
-        ( )  (    ) )
-       ________________
-      <     CHHA       > ___
+         (  )  (  )  )
+         ) (   ) (  (
+         ( )  (   ) )
+        ______________
+       /     CHHA     \  ___
       |  Chapel-based  |/ _ \
       | Hydrodynamics  | | | |
       |    for HPC     |_|_| |
