@@ -9,6 +9,10 @@ config const npoints: int(64)  = 5;
 config const xmin:    real(64) = 0.0;
 config const xmax:    real(64) = 5.0;
 config const reconstruction_type: string = "constant";
+config const cfl: real(64) = 0.3;
+config const dt_ini: real(64) = 1.0e-04;
+config const t_start: real(64) = 0.0;
+config const t_stop: real(64) = 1.0;
 
 proc main(args: [] string) {  
     var w: Wall;
@@ -37,10 +41,22 @@ proc main(args: [] string) {
       writeln();
     }
 
+    var stepNumber: int(64) = 0;
+    var time: real(64) = t_start;
+    var delta_t: real(64) = dt_ini;
+    var cell_size_min: real(64) = min reduce [c in grid.cells_tot] c.cell_size;
+    if debug then writeln("Min cell size: ", cell_size_min);
+
     init_field(grid);
     prims_to_consv(grid);
     set_boundary(grid);
     interpolate_edges(grid);
+
+    while time<t_stop do {
+
+      stepNumber += 1;
+      time += delta_t;
+    }
 
     writeln("Cells: ");
     for i in grid.indicesAll {

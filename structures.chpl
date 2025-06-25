@@ -12,16 +12,18 @@ module structures {
         var state_consv_left: [state_domain] real(64);
         var state_consv_right: [state_domain] real(64);
         var state_consv_solve: [state_domain] real(64);
+        var flux_solve: [state_domain] real(64);
         var dummy_initialized: bool;
 
         proc init (): void {
             this.position = 0.0;
             this.dummy_initialized = true;
             init this;
-            for i in this.states_count {
-                this.state_consv_left  = -i: real(64);
-                this.state_consv_right = -i: real(64);
-                this.state_consv_solve = -i: real(64);
+            for state_var in this.states_count {
+                this.state_consv_left[state_var]  = -state_var: real(64);
+                this.state_consv_right[state_var] = -state_var: real(64);
+                this.state_consv_solve[state_var] = -state_var: real(64);
+                this.flux_solve[state_var] = -state_var: real(64);
             }
         }
 
@@ -53,9 +55,9 @@ module structures {
             this.cell_size = 0.0;
             this.dummy_initialized = true;
             init this;
-            for i in this.states_count {
-                this.state_consv_center[i] = -i: real(64);
-                this.state_prims_center[i] = -i: real(64);
+            for state_var in this.states_count {
+                this.state_consv_center[state_var] = -state_var: real(64);
+                this.state_prims_center[state_var] = -state_var: real(64);
             }
         }
 
