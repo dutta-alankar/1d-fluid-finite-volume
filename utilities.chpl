@@ -18,6 +18,7 @@ module utilities {
 
     // Parallel write using zippered iteration
     proc writeArraysToFile(filename: string, A: [] real(64), B: [] real(64)) {
+        assert(A.domain==B.domain && A.domain.rank==1, "Domains of A and B must match and be one-dimensional. A:"+A.domain:string+", B:"+B.domain:string);
         var f = try! open(filename, ioMode.cw);
         var writer = try! f.writer(locking=true);
         coforall loc in Locales {
