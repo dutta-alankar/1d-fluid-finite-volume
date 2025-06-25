@@ -1,4 +1,5 @@
 use Help;
+use utilities;
 use structures;
 use reconstruction;
 use conversion;
@@ -90,6 +91,14 @@ proc main(args: [] string) {
       writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
     }
 
+    var positions: [computeDomain] real(64);
+    var state: [computeDomain] real(64);
+    sync forall i in computeDomain {
+      positions[i] = grid.cells_tot[i].center;
+      state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
+    }
+    writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
+
     if delta_t>dt_max then delta_t = dt_max;
     writeln("Starting computation ...");
 
@@ -107,6 +116,11 @@ proc main(args: [] string) {
       if delta_t>dt_max then delta_t = dt_max;
       writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
     }
+    sync forall i in computeDomain {
+      positions[i] = grid.cells_tot[i].center;
+      state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
+    }
+    writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
 
     writeln("Cells: ");
     for i in grid.indicesAll {

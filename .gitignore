@@ -1,5 +1,6 @@
 core*
 *.o
+*.txt
 main
 main_real
 structures

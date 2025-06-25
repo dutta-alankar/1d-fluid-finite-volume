@@ -1,4 +1,5 @@
 module utilities {
+    use IO;
 
     proc linspace(start: real(64), stop: real(64), num: int(64), D: domain(?)): [D] real(64) {
         assert(D.rank == 1, "Domain must be one-dimensional 'rank'="+D.rank:string+"!=1");
@@ -13,5 +14,19 @@ module utilities {
             }
         }
         return result;
+    }
+
+    // Parallel write using zippered iteration
+    proc writeArraysToFile(filename: string, A: [] real(64), B: [] real(64)) {
+        var f = try! open(filename, ioMode.cw);
+        var writer = try! f.writer(locking=true);
+        coforall loc in Locales {
+            on loc {
+                forall (a, b, i) in zip(A, B, A.domain) with (ref writer) {
+                    try! writer.writeln(a, "\t", b);
+                }
+            }
+        }
+        sync try! writer.close();
     }
 }
