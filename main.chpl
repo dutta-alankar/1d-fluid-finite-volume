@@ -1,5 +1,4 @@
 use Help;
-use Math;
 use utilities;
 use structures;
 use reconstruction;
@@ -8,6 +7,7 @@ use initialize;
 use boundary;
 use riemann;
 use time_stepper;
+use dump;
 
 config const npoints: int(64)  = 5;
 config const xmin:    real(64) = 0.0;
@@ -23,8 +23,11 @@ config const max_steps: int(64) = 10000000000000;
 config const freq: int(64) = 20;
 config const output_interval: real(64) = 0.1;
 
-proc shouldOutput(time: real(64), output_dt: real(64), dt: real(64)): bool {
-  return abs(mod(time, output_dt)) < 1.1*dt;
+proc prepare_run (grid: borrowed Grid(?)): void {
+  init_field(grid);
+  prims_to_consv(grid);
+  set_boundary(grid);
+  interpolate_edges(grid);
 }
 
 proc updateCells (grid: borrowed Grid(?), dt: real(64)): void {
@@ -51,60 +54,14 @@ proc main(args: [] string) {
     var grid = new owned Grid(xmin, xmax, npoints, nghosts);
     var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
 
-    /*
-    if debug { 
-      writeln("cell centers: ");
-      for i in grid.cells_tot.domain {
-        write(grid.cells_tot[i].center);
-        write(" ");
-      }
-      writeln();
-      writeln("left wall positions: ");
-      for i in grid.cells_tot.domain {
-        write(grid.cells_tot[i].wall_left.position);
-        write(" ");
-      }
-      writeln();
-      writeln("right wall positions: ");
-      for i in grid.cells_tot.domain {
-        write(grid.cells_tot[i].wall_right.position);
-        write(" ");
-      }
-      writeln();
-    }*/
-
     var stepNumber: int(64) = 0;
     var time: real(64) = t_start;
     var delta_t: real(64) = dt_ini;
     var cell_size_min: real(64) = min reduce [c in grid.cells_tot] c.cell_size;
     if debug then writeln("Min cell size: ", cell_size_min);
 
-    init_field(grid);
-    prims_to_consv(grid);
-    set_boundary(grid);
-    interpolate_edges(grid);
-
-    /*
-    writeln("Cells: ");
-    for i in grid.indicesAll {
-      var tag: string = "";
-      if !computeDomain.contains(i) then tag = ": boundary";
-      writeln("x = ", grid.cells_tot[i].center, ": (", grid.cells_tot[i].state_consv_center, ", ", grid.cells_tot[i].state_prims_center, ")", tag);
-    }
-    writeln("Walls: ");
-    for i in grid.indicesAllStag {
-      var tag: string = "";
-      if i==grid.indicesAllStag.low || i==grid.indicesAllStag.high then tag = ": boundary";
-      writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
-    }
-    */
-    var positions: [computeDomain] real(64);
-    var state: [computeDomain] real(64);
-    sync forall i in computeDomain {
-      positions[i] = grid.cells_tot[i].center;
-      state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
-    }
-    writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
+    prepare_run(grid);
+    dump_ascii_to_disk(grid, stepNumber, time);
 
     if delta_t>dt_max then delta_t = dt_max;
     writeln("Starting computation ...");
@@ -124,43 +81,10 @@ proc main(args: [] string) {
       if delta_t>dt_max then delta_t = dt_max;
       if stepNumber%freq==0 || stepNumber==max_steps then 
         writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
-      if shouldOutput(time, output_interval, delta_t) && (stepNumber>1 || max_steps<10000000000000) {
-        writeln("Dumping ./output.", stepNumber, ".txt to disk");
-        sync forall i in computeDomain {
-          positions[i] = grid.cells_tot[i].center;
-          state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
-        }
-        writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
-      }
+      if shouldOutput(time, output_interval, delta_t) && (stepNumber>1 || max_steps<10000000000000) then
+        dump_ascii_to_disk(grid, stepNumber, time);
     }
-    sync forall i in computeDomain {
-      positions[i] = grid.cells_tot[i].center;
-      state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
-    }
-    writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
+    /* end of computation */
+    dump_ascii_to_disk(grid, stepNumber, time);
 
-    /*
-    writeln("Cells: ");
-    for i in grid.indicesAll {
-      var tag: string = "";
-      if !computeDomain.contains(i) then tag = ": boundary";
-      writeln("x = ", grid.cells_tot[i].center, ": (", grid.cells_tot[i].state_consv_center, ", ", grid.cells_tot[i].state_prims_center, ")", tag);
-    }
-    writeln("Walls: ");
-    for i in grid.indicesAllStag {
-      var tag: string = "";
-      if i==grid.indicesAllStag.low || i==grid.indicesAllStag.high then tag = ": boundary";
-      writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
-    }
-    */
-    /*
-    writeln("Left boundary: ");
-    forall (i, j) in grid.indicesAll.boundaries(0, -1) {
-      writeln("element ", i, " side ", j);
-    }
-    writeln("Right boundary: ");
-    forall (i, j) in grid.indicesAll.boundaries(0, 1) {
-      writeln("element ", i, " side ", j);
-    }
-    */
 }

@@ -1,5 +1,6 @@
 module initialize {
     use structures;
+    use Math;
 
     proc init_field (grid: borrowed Grid(?)): void {
         var xmin: real(64) = grid.xmin;
