@@ -30,4 +30,14 @@ module utilities {
         }
         sync try! writer.close();
     }
+
+    proc padWithZeros(n: int(64), width: int(64)): string {
+        var s: string = n:string;
+        var zerosNeeded: int(64) = width - s.numBytes;
+        if zerosNeeded > 0 then
+            return "0" * zerosNeeded + s;
+        else 
+            return s;
+    }
+
 }
