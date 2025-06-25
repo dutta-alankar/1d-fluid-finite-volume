@@ -5,7 +5,7 @@ module time_stepper {
         /* explicit Euler first order time integration */
         var consv_state_final: [state_domain] real(64);
         for state_var in state_domain {
-            consv_state_final[state_var] = consv_state[state_var] - rhs_state[state_var]*dt;
+            consv_state_final[state_var] = consv_state[state_var] + rhs_state[state_var]*dt;
         }
         return consv_state_final;
     }
