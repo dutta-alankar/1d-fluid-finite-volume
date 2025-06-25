@@ -31,7 +31,7 @@ module reconstruction {
 
     proc interpolate_edges (grid: borrowed Grid(?)): void {
         // TODO: might need indicesInner
-        sync forall i in grid.indicesAll {
+        forall i in grid.indicesAll {
             var sgn_dist_left: real(64)  = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_left.position)/grid.cells_tot[i].cell_size;
             var sgn_dist_right: real(64) = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_right.position)/grid.cells_tot[i].cell_size;
             var pow: int(64) = 0;

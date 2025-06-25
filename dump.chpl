@@ -12,7 +12,7 @@ module dump {
         var positions: [computeDomain] real(64);
         var state: [computeDomain] real(64);
         writeln("time ", time, " (step ", stepNumber, "): Dumping ./output.", padWithZeros(ascii_dump_counter, 4), ".txt to disk");
-        sync forall i in computeDomain {
+        forall i in computeDomain {
             positions[i] = grid.cells_tot[i].center;
             state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
         }

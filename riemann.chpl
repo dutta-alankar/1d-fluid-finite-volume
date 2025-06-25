@@ -23,7 +23,7 @@ module riemann {
 
     proc solve_at_walls (grid: borrowed Grid(?), vel: real(64)): void {
         var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
-        sync forall i in grid.indicesAll {
+        forall i in grid.indicesAll {
             // if debug then writeln("i = ", i, ", flag = ", grid.cells_tot[i].solve_flag, " ", computeDomain.high+1);
             if !grid.cells_tot[i].solve_flag && i!=(computeDomain.high+1) then continue;
             var solution_consv: [state_domain] real(64) = solver_advect (grid.walls_tot[i], vel);
