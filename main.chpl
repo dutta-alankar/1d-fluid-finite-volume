@@ -8,6 +8,7 @@ use boundary;
 use riemann;
 use time_stepper;
 use dump;
+use logo;
 
 config const npoints: int(64)  = 5;
 config const xmin:    real(64) = 0.0;
@@ -48,7 +49,8 @@ proc updateCells (grid: borrowed Grid(?), dt: real(64)): void {
   sync grid.cells_tot.updateFluff();
 }
 
-proc main(args: [] string) {  
+proc main(args: [] string) { 
+    print_logo();
     var w: Wall;
     const nghosts: int(64) = compute_nghost(reconstruction_type);
     var grid = new owned Grid(xmin, xmax, npoints, nghosts);
