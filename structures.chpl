@@ -46,6 +46,7 @@ module structures {
         var state_consv_center: [state_domain] real(64);
         var state_prims_center: [state_domain] real(64);
         var dummy_initialized: bool;
+        var solve_flag: bool;
 
         proc init (): void {
             this.wall_left  = new Wall();
@@ -54,6 +55,7 @@ module structures {
             this.center = 0.0;
             this.cell_size = 0.0;
             this.dummy_initialized = true;
+            this.solve_flag = true;
             init this;
             for state_var in this.states_count {
                 this.state_consv_center[state_var] = -state_var: real(64);
@@ -122,6 +124,7 @@ module structures {
                 writeln("Right wall position info for debugging: ");
                 writeln(x_right);
             }
+            var computeDomain: domain(1) = {this.indicesInner.low..this.indicesInner.high};
             // create the wall
             sync {
                 forall i in this.indicesAll do
@@ -143,6 +146,7 @@ module structures {
                 assert(!this.walls_tot[i].dummy_initialized, "Problem: Wall "+i:string+" is dummy");
                 assert(!this.walls_tot[i+1].dummy_initialized, "Problem: Wall "+(i+1):string+" is dummy");
                 this.cells_tot[i] = new Cell(this.walls_tot[i], this.walls_tot[i+1], i); 
+                if !computeDomain.contains(i) then this.cells_tot[i].solve_flag = false;
             }
             sync this.cells_tot.updateFluff();
         }

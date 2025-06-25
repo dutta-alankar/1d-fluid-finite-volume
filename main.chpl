@@ -4,6 +4,8 @@ use reconstruction;
 use conversion;
 use initialize;
 use boundary;
+use riemann;
+use time_stepper;
 
 config const npoints: int(64)  = 5;
 config const xmin:    real(64) = 0.0;
@@ -12,7 +14,30 @@ config const reconstruction_type: string = "constant";
 config const cfl: real(64) = 0.3;
 config const dt_ini: real(64) = 1.0e-04;
 config const t_start: real(64) = 0.0;
-config const t_stop: real(64) = 1.0;
+config const t_stop: real(64) = 3.0;
+config const vel_adv: real(64) = 1.0;
+config const dt_max: real(64) = 1.0e-02;
+
+proc updateCells (grid: borrowed Grid(?), dt: real(64)): void {
+  var w: Wall;
+  var dummy = new owned Grid(xmin, xmax, npoints, 1);
+  var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
+
+  solve_at_walls(grid, vel_adv);
+  sync forall i in grid.indicesInner {
+    if !grid.cells_tot[i].solve_flag then continue;
+    var rhs_state: [grid.cells_tot[i].states_count] real(64);
+    var consv_updated: [grid.cells_tot[i].states_count] real(64);
+    for state_var in grid.cells_tot[i].states_count {
+      rhs_state[state_var] = (grid.cells_tot[i].wall_left.flux_solve[state_var] - grid.cells_tot[i].wall_right.flux_solve[state_var])/grid.cells_tot[i].cell_size;
+    }
+    consv_updated = timeStep(grid.cells_tot[i].state_consv_center, rhs_state, dt);
+    for state_var in grid.cells_tot[i].states_count do 
+      grid.cells_tot[i].state_consv_center[state_var] = consv_updated[state_var];
+  }
+  consv_to_prims (grid);
+  sync grid.cells_tot.updateFluff();
+}
 
 proc main(args: [] string) {  
     var w: Wall;
@@ -52,10 +77,35 @@ proc main(args: [] string) {
     set_boundary(grid);
     interpolate_edges(grid);
 
-    while time<t_stop do {
+    writeln("Cells: ");
+    for i in grid.indicesAll {
+      var tag: string = "";
+      if !computeDomain.contains(i) then tag = ": boundary";
+      writeln("x = ", grid.cells_tot[i].center, ": (", grid.cells_tot[i].state_consv_center, ", ", grid.cells_tot[i].state_prims_center, ")", tag);
+    }
+    writeln("Walls: ");
+    for i in grid.indicesAllStag {
+      var tag: string = "";
+      if i==grid.indicesAllStag.low || i==grid.indicesAllStag.high then tag = ": boundary";
+      writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
+    }
 
+    if delta_t>dt_max then delta_t = dt_max;
+    writeln("Starting computation ...");
+
+    writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
+    while time<t_stop do {
+      /* computation for each loop starts here */
+      updateCells(grid, delta_t);
+      prims_to_consv(grid);
+      set_boundary(grid);
+      interpolate_edges(grid);
+      /* computation for each loop ends here */
       stepNumber += 1;
       time += delta_t;
+      delta_t = cfl*cell_size_min/vel_adv;
+      if delta_t>dt_max then delta_t = dt_max;
+      writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
     }
 
     writeln("Cells: ");
