@@ -11,7 +11,9 @@ module initialize {
             var xr: real(64) = grid.cells_tot[i].wall_right.position;
             // loop all the fluid variables
             for state_var in grid.cells_tot[i].state_prims_center.domain {
-                if ((xc-xmin)/extent)<=0.5 then
+                if ((xc-xmin)/extent)<(1.0/3.0) then
+                    grid.cells_tot[i].state_prims_center[state_var] = 0.0;
+                else if ((xc-xmin)/extent)>=(1.0/3.0) && ((xc-xmin)/extent)<(2.0/3.0) then
                     grid.cells_tot[i].state_prims_center[state_var] = 1.0;
                 else
                     grid.cells_tot[i].state_prims_center[state_var] = 0.0;

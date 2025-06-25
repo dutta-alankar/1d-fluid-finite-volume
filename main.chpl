@@ -1,4 +1,5 @@
 use Help;
+use Math;
 use utilities;
 use structures;
 use reconstruction;
@@ -18,12 +19,16 @@ config const t_start: real(64) = 0.0;
 config const t_stop: real(64) = 3.0;
 config const vel_adv: real(64) = 1.0;
 config const dt_max: real(64) = 1.0e-02;
+config const max_steps: int(64) = 10000000000000;
+config const freq: int(64) = 20;
+config const output_interval: real(64) = 0.1;
+
+proc shouldOutput(time: real(64), output_dt: real(64), dt: real(64)): bool {
+  return abs(mod(time, output_dt)) < 1.1*dt;
+}
 
 proc updateCells (grid: borrowed Grid(?), dt: real(64)): void {
-  var w: Wall;
-  var dummy = new owned Grid(xmin, xmax, npoints, 1);
   var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
-
   solve_at_walls(grid, vel_adv);
   sync forall i in grid.indicesInner {
     if !grid.cells_tot[i].solve_flag then continue;
@@ -46,6 +51,7 @@ proc main(args: [] string) {
     var grid = new owned Grid(xmin, xmax, npoints, nghosts);
     var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
 
+    /*
     if debug { 
       writeln("cell centers: ");
       for i in grid.cells_tot.domain {
@@ -65,7 +71,7 @@ proc main(args: [] string) {
         write(" ");
       }
       writeln();
-    }
+    }*/
 
     var stepNumber: int(64) = 0;
     var time: real(64) = t_start;
@@ -78,6 +84,7 @@ proc main(args: [] string) {
     set_boundary(grid);
     interpolate_edges(grid);
 
+    /*
     writeln("Cells: ");
     for i in grid.indicesAll {
       var tag: string = "";
@@ -90,7 +97,7 @@ proc main(args: [] string) {
       if i==grid.indicesAllStag.low || i==grid.indicesAllStag.high then tag = ": boundary";
       writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
     }
-
+    */
     var positions: [computeDomain] real(64);
     var state: [computeDomain] real(64);
     sync forall i in computeDomain {
@@ -103,10 +110,11 @@ proc main(args: [] string) {
     writeln("Starting computation ...");
 
     writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
-    while time<t_stop do {
+    while time<t_stop && stepNumber<max_steps do {
       /* computation for each loop starts here */
       updateCells(grid, delta_t);
-      prims_to_consv(grid);
+      // XXX: Check if this is needed later 
+      // prims_to_consv(grid);
       set_boundary(grid);
       interpolate_edges(grid);
       /* computation for each loop ends here */
@@ -114,7 +122,16 @@ proc main(args: [] string) {
       time += delta_t;
       delta_t = cfl*cell_size_min/vel_adv;
       if delta_t>dt_max then delta_t = dt_max;
-      writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
+      if stepNumber%freq==0 || stepNumber==max_steps then 
+        writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
+      if shouldOutput(time, output_interval, delta_t) && (stepNumber>1 || max_steps<10000000000000) {
+        writeln("Dumping ./output.", stepNumber, ".txt to disk");
+        sync forall i in computeDomain {
+          positions[i] = grid.cells_tot[i].center;
+          state[i] = grid.cells_tot[i].state_prims_center[grid.cells_tot[i].states_count.low];
+        }
+        writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
+      }
     }
     sync forall i in computeDomain {
       positions[i] = grid.cells_tot[i].center;
@@ -122,6 +139,7 @@ proc main(args: [] string) {
     }
     writeArraysToFile("./output."+stepNumber:string+".txt", positions, state);
 
+    /*
     writeln("Cells: ");
     for i in grid.indicesAll {
       var tag: string = "";
@@ -133,8 +151,8 @@ proc main(args: [] string) {
       var tag: string = "";
       if i==grid.indicesAllStag.low || i==grid.indicesAllStag.high then tag = ": boundary";
       writeln("x = ", grid.walls_tot[i].position, ": ", grid.walls_tot[i].state_consv_left, " | ", grid.walls_tot[i].state_consv_right, tag);
-  }
-
+    }
+    */
     /*
     writeln("Left boundary: ");
     forall (i, j) in grid.indicesAll.boundaries(0, -1) {

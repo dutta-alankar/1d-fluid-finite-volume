@@ -21,14 +21,14 @@ module boundary {
                     for state_var in grid.cells_tot[i].state_consv_center.domain {
                         grid.cells_tot[i].state_prims_center[state_var] =  grid.cells_tot[i+grid.npoints_int].state_prims_center[state_var]; // periodic
                     }
-                    if debug then writeln("L ", i, ": ", grid.cells_tot[i].state_prims_center, " <- R ", i+grid.npoints_int, ": ", grid.cells_tot[i+grid.npoints_int].state_prims_center);
+                    // if debug then writeln("L ", i, ": ", grid.cells_tot[i].state_prims_center, " <- R ", i+grid.npoints_int, ": ", grid.cells_tot[i+grid.npoints_int].state_prims_center);
                 }
                 else {
                     /* place code here to set the right boundary */
                     for state_var in grid.cells_tot[i].state_consv_center.domain {
                         grid.cells_tot[i].state_prims_center[state_var] =  grid.cells_tot[i%grid.npoints_int].state_prims_center[state_var]; // periodic
                     }
-                    if debug then writeln("R ", i, ": ", grid.cells_tot[i].state_prims_center, " <- L ", i%grid.npoints_int, ": ", grid.cells_tot[i%grid.npoints_int].state_prims_center);
+                    // if debug then writeln("R ", i, ": ", grid.cells_tot[i].state_prims_center, " <- L ", i%grid.npoints_int, ": ", grid.cells_tot[i%grid.npoints_int].state_prims_center);
                 }
                 prims_to_consv(grid, only_boundary=true);
             }
