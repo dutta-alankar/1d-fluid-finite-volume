@@ -72,6 +72,7 @@ module structures {
             this.center = 0.5*(xleft+xright);
             this.cell_size = xright-xleft;
             this.dummy_initialized = false;
+            this.solve_flag = true;
         }
     }
 
@@ -115,6 +116,7 @@ module structures {
             var dx: real(64) = (this.xmax-this.xmin)/this.npoints_int;
             var x_left:  [this.indicesAll] real(64) = utilities.linspace(this.xmin-this.nghosts*dx, this.xmax+(this.nghosts-1)*dx, this.npoints_tot, this.indicesAll);
             var x_right: [this.indicesAll] real(64) = x_left + dx;
+            /*
             if debug {
                 writeln("indicesAll: ", this.indicesAll);
                 writeln("indicesInner: ", this.indicesInner);
@@ -123,7 +125,7 @@ module structures {
                 writeln(x_left);
                 writeln("Right wall position info for debugging: ");
                 writeln(x_right);
-            }
+            }*/
             var computeDomain: domain(1) = {this.indicesInner.low..this.indicesInner.high};
             // create the wall
             sync {
@@ -132,6 +134,7 @@ module structures {
                 this.walls_tot[this.indicesAllStag.high] = new Wall(x_right[this.indicesAll.high]);
             }
             sync this.walls_tot.updateFluff();
+            /*
             if debug {
                 writeln("Wall info for debugging: ");
                 for i in this.walls_tot.domain {
@@ -140,12 +143,13 @@ module structures {
                     else
                         writeln("i=", i, " -> dummy!", " at locale ", this.walls_tot[i].locale.id);
                 }
-            }
+            }*/
             // create the cells
             sync forall i in this.indicesAll {
                 assert(!this.walls_tot[i].dummy_initialized, "Problem: Wall "+i:string+" is dummy");
                 assert(!this.walls_tot[i+1].dummy_initialized, "Problem: Wall "+(i+1):string+" is dummy");
-                this.cells_tot[i] = new Cell(this.walls_tot[i], this.walls_tot[i+1], i); 
+                this.cells_tot[i] = new Cell(this.walls_tot[i], this.walls_tot[i+1], i);
+                // if debug then writeln("i = ", i, " is not in compute domain: ", !computeDomain.contains(i));
                 if !computeDomain.contains(i) then this.cells_tot[i].solve_flag = false;
             }
             sync this.cells_tot.updateFluff();

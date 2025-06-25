@@ -53,10 +53,10 @@ module reconstruction {
             }
         }
         for i in grid.indicesAll {
-            if debug then writeln("cell ", i, ": |", grid.cells_tot[i].wall_left.state_consv_right, "____",  grid.cells_tot[i].wall_right.state_consv_left, "|");
-            if debug then writeln("wall ", i, ": ", grid.walls_tot[i].state_consv_left, "|", grid.walls_tot[i].state_consv_right, " at x = ", grid.walls_tot[i].position);
+            // if debug then writeln("cell ", i, ": |", grid.cells_tot[i].wall_left.state_consv_right, "____",  grid.cells_tot[i].wall_right.state_consv_left, "|");
+            // if debug then writeln("wall ", i, ": ", grid.walls_tot[i].state_consv_left, "|", grid.walls_tot[i].state_consv_right, " at x = ", grid.walls_tot[i].position);
         }
-        if debug then writeln("wall ", grid.indicesAllStag.high, ": ", grid.walls_tot[grid.indicesAllStag.high].state_consv_left, "|", grid.walls_tot[grid.indicesAllStag.high].state_consv_right, " at x = ", grid.walls_tot[grid.indicesAllStag.high].position);
+        // if debug then writeln("wall ", grid.indicesAllStag.high, ": ", grid.walls_tot[grid.indicesAllStag.high].state_consv_left, "|", grid.walls_tot[grid.indicesAllStag.high].state_consv_right, " at x = ", grid.walls_tot[grid.indicesAllStag.high].position);
         sync grid.walls_tot.updateFluff();
         sync grid.cells_tot.updateFluff();
     }
