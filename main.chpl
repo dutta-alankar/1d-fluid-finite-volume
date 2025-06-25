@@ -33,7 +33,7 @@ proc prepare_run (grid: borrowed Grid(?)): void {
 proc updateCells (grid: borrowed Grid(?), dt: real(64)): void {
   var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
   solve_at_walls(grid, vel_adv);
-  sync forall i in grid.indicesInner {
+  forall i in grid.indicesInner {
     if !grid.cells_tot[i].solve_flag then continue;
     var rhs_state: [grid.cells_tot[i].states_count] real(64);
     var consv_updated: [grid.cells_tot[i].states_count] real(64);

@@ -145,7 +145,7 @@ module structures {
                 }
             }*/
             // create the cells
-            sync forall i in this.indicesAll {
+            forall i in this.indicesAll {
                 assert(!this.walls_tot[i].dummy_initialized, "Problem: Wall "+i:string+" is dummy");
                 assert(!this.walls_tot[i+1].dummy_initialized, "Problem: Wall "+(i+1):string+" is dummy");
                 this.cells_tot[i] = new Cell(this.walls_tot[i], this.walls_tot[i+1], i);

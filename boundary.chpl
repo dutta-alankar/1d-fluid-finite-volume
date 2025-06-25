@@ -4,7 +4,7 @@ module boundary {
 
     proc set_boundary (grid: borrowed Grid(?)): void {
         var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
-        sync forall i in grid.indicesAll {
+        forall i in grid.indicesAll {
             if computeDomain.contains(i) {
                 /* place code here to set internal boundaries */
                 /*
