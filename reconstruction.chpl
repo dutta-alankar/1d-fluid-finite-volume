@@ -29,26 +29,26 @@ module reconstruction {
         // TODO: might need indicesInner
         forall i in grid.indicesAll {
             if !(grid.cells_tot[i].solve_flag && computeDomain.contains(i)) then continue;
-            var sgn_dist_left: real(64)  = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_left.position)/grid.cells_tot[i].cell_size;
-            var sgn_dist_right: real(64) = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_right.position)/grid.cells_tot[i].cell_size;
-            var pow: int(64) = 0;
+            var sgn_dist_left: real(64)  = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_left.position)/grid.cells_tot[i].cell_size; // negative
+            var sgn_dist_right: real(64) = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_right.position)/grid.cells_tot[i].cell_size; // positive
             // if debug then writeln("cell ", i, ": ", sgn_dist_left, ", ", sgn_dist_right);
             for state_var in grid.cells_tot[i].state_consv_center.domain {
                 grid.cells_tot[i].wall_left.state_consv_right[state_var] = 0.0;
                 grid.cells_tot[i].wall_right.state_consv_left[state_var] = 0.0;
             }
+            var pow: int(64) = 0;
             for j in reconstruction_coeff.domain {
                 for state_var in grid.cells_tot[i].state_consv_center.domain {
-                    var factor: real(64);
+                    var factor: real(64) = 0.0;
                     if j==reconstruction_coeff.domain.low then 
                         factor = grid.cells_tot[i].state_consv_center[state_var];
-                    if j==reconstruction_coeff.domain.low+1 then
-                        factor = grid.cells_tot[i+1].state_consv_center[state_var] + grid.cells_tot[i-1].state_consv_center[state_var];
+                    else if j==reconstruction_coeff.domain.low+1 then
+                        factor = grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var];
                     else
-                        factor = grid.cells_tot[i].state_consv_center[state_var];
+                        factor = 0.0;
                     grid.cells_tot[i].wall_left.state_consv_right[state_var] +=  (factor * reconstruction_coeff[j] * sgn_dist_left**pow);
                     grid.cells_tot[i].wall_right.state_consv_left[state_var] +=  (factor * reconstruction_coeff[j] * sgn_dist_right**pow);
-                }    
+                }   
                 pow = pow+1;
             }
             for state_var in grid.cells_tot[i].state_consv_center.domain {
