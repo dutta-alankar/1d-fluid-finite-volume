@@ -10,28 +10,25 @@ module reconstruction {
             for i in reconstruction_coeff_domain {
                 reconstruction_coeff[i] = 1.0;
             }
-            return 1;
         }
         else if reconstruction_type=="linear" {
             reconstruction_coeff_domain = {1..2};
             for i in reconstruction_coeff_domain {
-                reconstruction_coeff[i] = 1.0;
+                reconstruction_coeff[i] = 1.0/i:real(64);
             }
-            return 2;
         }
         else {
             writeln("Problem: Invaid reconstruction scheme!");
-            reconstruction_coeff_domain = {1..1};
-            for i in reconstruction_coeff_domain {
-                reconstruction_coeff[i] = 1.0;
-            }
-            return 1;
+            exit(1);
         }
+        return reconstruction_coeff_domain.high;
     }
 
     proc interpolate_edges (grid: borrowed Grid(?)): void {
+        var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
         // TODO: might need indicesInner
         forall i in grid.indicesAll {
+            if !(grid.cells_tot[i].solve_flag && computeDomain.contains(i)) then continue;
             var sgn_dist_left: real(64)  = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_left.position)/grid.cells_tot[i].cell_size;
             var sgn_dist_right: real(64) = -(grid.cells_tot[i].center-grid.cells_tot[i].wall_right.position)/grid.cells_tot[i].cell_size;
             var pow: int(64) = 0;
@@ -42,8 +39,15 @@ module reconstruction {
             }
             for j in reconstruction_coeff.domain {
                 for state_var in grid.cells_tot[i].state_consv_center.domain {
-                    grid.cells_tot[i].wall_left.state_consv_right[state_var] +=  (grid.cells_tot[i].state_consv_center[state_var] * reconstruction_coeff[j] * sgn_dist_left**pow);
-                    grid.cells_tot[i].wall_right.state_consv_left[state_var] +=  (grid.cells_tot[i].state_consv_center[state_var] * reconstruction_coeff[j] * sgn_dist_right**pow);
+                    var factor: real(64);
+                    if j==reconstruction_coeff.domain.low then 
+                        factor = grid.cells_tot[i].state_consv_center[state_var];
+                    if j==reconstruction_coeff.domain.low+1 then
+                        factor = grid.cells_tot[i+1].state_consv_center[state_var] + grid.cells_tot[i-1].state_consv_center[state_var];
+                    else
+                        factor = grid.cells_tot[i].state_consv_center[state_var];
+                    grid.cells_tot[i].wall_left.state_consv_right[state_var] +=  (factor * reconstruction_coeff[j] * sgn_dist_left**pow);
+                    grid.cells_tot[i].wall_right.state_consv_left[state_var] +=  (factor * reconstruction_coeff[j] * sgn_dist_right**pow);
                 }    
                 pow = pow+1;
             }
