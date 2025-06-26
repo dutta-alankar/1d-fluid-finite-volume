@@ -6,4 +6,4 @@ Compile command:
 
 Result for simple advection (advection branch):
 
-![image](https://github.com/user-attachments/assets/8071f86c-6815-46cb-8b60-6e859cf6e48b)
+![advection](https://github.com/user-attachments/assets/6e14ff0e-1956-43b3-9a32-5e49e2835378)
