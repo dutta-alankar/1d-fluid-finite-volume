@@ -1,4 +1,5 @@
 module dump {
+    use globals;
     use structures;
     use utilities;
     use Math;
@@ -22,6 +23,8 @@ module dump {
     }
 
     proc shouldOutput (time: real(64), output_dt: real(64), dt: real(64)): bool {
-        return abs(mod(time, output_dt)) < 1.1*dt;
+        var time_start: real(64) = 0.0;
+        // return time>=(floor((time-time_start)/output_dt)*output_dt) && (time+dt)<(floor((time-time_start)/output_dt)*output_dt);
+        return abs(mod(time, output_dt)) < 1.0001*dt;
     }
 }

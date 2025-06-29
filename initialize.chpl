@@ -1,4 +1,5 @@
 module initialize {
+    use globals;
     use structures;
     use Math;
 
@@ -6,7 +7,7 @@ module initialize {
         var xmin: real(64) = grid.xmin;
         var xmax: real(64) = grid.xmax;
         var extent: real(64) = xmax-xmin;
-        forall i in grid.indicesInner {
+        forall i in grid.indicesAll {
             var xc: real(64) = grid.cells_tot[i].center;
             var xl: real(64) = grid.cells_tot[i].wall_left.position;
             var xr: real(64) = grid.cells_tot[i].wall_right.position;

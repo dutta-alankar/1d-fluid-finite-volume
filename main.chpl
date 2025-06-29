@@ -9,48 +9,26 @@ use riemann;
 use time_stepper;
 use dump;
 use logo;
+use globals;
 
-config const npoints: int(64)  = 5;
-config const xmin:    real(64) = 0.0;
-config const xmax:    real(64) = 5.0;
-config const reconstruction_type: string = "constant";
-config const cfl: real(64) = 0.3;
-config const dt_ini: real(64) = 1.0e-04;
-config const t_start: real(64) = 0.0;
-config const t_stop: real(64) = 3.0;
-config const vel_adv: real(64) = 1.0;
-config const dt_max: real(64) = 1.0e-02;
-config const max_steps: int(64) = 10000000000000;
-config const freq: int(64) = 20;
-config const output_interval: real(64) = 0.1;
-
-proc prepare_run (grid: borrowed Grid(?)): void {
-  init_field(grid);
-  prims_to_consv(grid);
-  set_boundary(grid);
-  interpolate_edges(grid);
+proc warnings (): void {
+  if time_integration=="euler" && reconstruction_type=="linear" then
+    writeln("WARNING: FTCS scheme is unconditionally unstable.");
 }
 
-proc updateCells (grid: borrowed Grid(?), dt: real(64)): void {
-  var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
-  solve_at_walls(grid, vel_adv);
-  forall i in grid.indicesInner {
-    if !grid.cells_tot[i].solve_flag then continue;
-    var rhs_state: [grid.cells_tot[i].states_count] real(64);
-    var consv_updated: [grid.cells_tot[i].states_count] real(64);
-    for state_var in grid.cells_tot[i].states_count {
-      rhs_state[state_var] = (grid.cells_tot[i].wall_left.flux_solve[state_var] - grid.cells_tot[i].wall_right.flux_solve[state_var])/grid.cells_tot[i].cell_size;
-    }
-    consv_updated = timeStep(grid.cells_tot[i].state_consv_center, rhs_state, dt);
-    for state_var in grid.cells_tot[i].states_count do 
-      grid.cells_tot[i].state_consv_center[state_var] = consv_updated[state_var];
+proc prepare_run (grid: borrowed Grid(?)): void {
+  sync {
+    init_field(grid);
+    set_boundary(grid);
+    prims_to_consv(grid);
   }
-  consv_to_prims (grid);
-  sync grid.cells_tot.updateFluff();
+  interpolate_edges(grid);
+  // solve_at_walls(grid, vel_adv);
 }
 
 proc main(args: [] string) { 
     print_logo();
+    warnings();
     var w: Wall;
     const nghosts: int(64) = compute_nghost(reconstruction_type);
     var grid = new owned Grid(xmin, xmax, npoints, nghosts);
@@ -60,16 +38,16 @@ proc main(args: [] string) {
     var time: real(64) = t_start;
     var delta_t: real(64) = dt_ini;
     var cell_size_min: real(64) = min reduce [c in grid.cells_tot] c.cell_size;
-    if debug then writeln("Min cell size: ", cell_size_min);
+    if debug then writeln("Min cell size: ", cell_size_min, ", ghosts: ", nghosts);
 
-    prepare_run(grid);
+    sync prepare_run(grid);
     dump_ascii_to_disk(grid, stepNumber, time);
 
     if delta_t>dt_max then delta_t = dt_max;
-    writeln("Starting computation ...");
+    if max_steps>0 then writeln("\n\nStarting computation ...");
 
-    writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
-    while time<t_stop && stepNumber<max_steps do {
+    if max_steps>0 then writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
+    while time<t_stop && stepNumber<max_steps {
       /* computation for each loop starts here */
       updateCells(grid, delta_t);
       // XXX: Check if this is needed later 
@@ -83,10 +61,12 @@ proc main(args: [] string) {
       if delta_t>dt_max then delta_t = dt_max;
       if stepNumber%freq==0 || stepNumber==max_steps then 
         writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
-      if shouldOutput(time, output_interval, delta_t) && (stepNumber>1 || max_steps<10000000000000) then
+      if shouldOutput(time, output_interval, delta_t) && (stepNumber>1 || max_steps<10000000000000) {
+        prims_to_consv(grid);
         dump_ascii_to_disk(grid, stepNumber, time);
+      }
     }
     /* end of computation */
-    dump_ascii_to_disk(grid, stepNumber, time);
+    if max_steps>0 then dump_ascii_to_disk(grid, stepNumber, time);
 
 }

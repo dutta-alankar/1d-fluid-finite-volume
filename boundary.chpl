@@ -1,4 +1,5 @@
 module boundary {
+    use globals;
     use structures;
     use conversion;
 
@@ -35,5 +36,6 @@ module boundary {
         }
 
         sync grid.cells_tot.updateFluff();
+        sync grid.walls_tot.updateFluff();
     }
 }
