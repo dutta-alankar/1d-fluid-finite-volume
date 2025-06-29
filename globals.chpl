@@ -13,4 +13,5 @@ module globals {
     config const max_steps: int(64) = 10000000000000;
     config const freq: int(64) = 20;
     config const output_interval: real(64) = 0.1;
+    config const slope_limiter: string = "mc";
 }
