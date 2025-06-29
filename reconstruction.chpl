@@ -19,7 +19,7 @@ module reconstruction {
         else if reconstruction_type=="linear" {
             reconstruction_coeff_domain = {1..2};
             for i in reconstruction_coeff_domain {
-                reconstruction_coeff[i] = 1.0/i:real(64);
+                reconstruction_coeff[i] = 1.0; // i:real(64);
             }
         }
         else {
@@ -57,14 +57,14 @@ module reconstruction {
                         factor = grid.cells_tot[i].state_consv_center[state_var];
                     else if j==(reconstruction_coeff.domain.low+1) {
                         if !use_slope_limiter then
-                            factor = grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var];
+                            factor = 0.5*(grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var]);
                         else if slope_limiter=="minmod" then
-                            factor = 2*minmod(grid.cells_tot[i].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var],
-                                              grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i].state_consv_center[state_var]);
+                            factor = minmod(grid.cells_tot[i].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var],
+                                            grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i].state_consv_center[state_var]);
                         else if slope_limiter=="mc" then
-                            factor = mc_lim(grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var],
-                                          2*grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i].state_consv_center[state_var],
-                                          2*grid.cells_tot[i].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var]);
+                            factor = mc_lim(0.5*(grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var]),
+                                            2*(grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i].state_consv_center[state_var]),
+                                            2*(grid.cells_tot[i].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var]));
                         else {
                             writeln("Slope limiter ", slope_limiter, " is not supported!");
                             exit(1);
