@@ -1,4 +1,5 @@
 module structures {
+    use globals;
     import StencilDist.stencilDist;
     import utilities;
 
@@ -45,6 +46,7 @@ module structures {
         var states_count: domain(1) = state_domain;
         var state_consv_center: [state_domain] real(64);
         var state_prims_center: [state_domain] real(64);
+        var rhs_state: [state_domain] real(64);
         var dummy_initialized: bool;
         var solve_flag: bool;
 
@@ -60,6 +62,7 @@ module structures {
             for state_var in this.states_count {
                 this.state_consv_center[state_var] = -state_var: real(64);
                 this.state_prims_center[state_var] = -state_var: real(64);
+                this.rhs_state[state_var] = -state_var: real(64);
             }
         }
 
@@ -92,7 +95,7 @@ module structures {
         var cells_tot: [indicesAll]  Cell;
         var walls_tot: [indicesAllStag] Wall;
 
-        proc init (xmin: real(64), xmax: real(64), npoints: int(64), nghosts: int(64)): void {
+        proc init (xmin: real(64) = 0.0, xmax: real(64) = 1.0, npoints: int(64) = 1, nghosts: int(64) = 1): void {
             this.xmin = xmin;
             this.xmax = xmax;
             this.nghosts = nghosts; 
@@ -107,8 +110,33 @@ module structures {
             this.indicesAll = indicesInnerDomain.expand((this.nghosts,));
             var indicesAllStagDomain: domain(1) = {this.indicesAll.low..this.indicesAll.high+1};
             this.indicesAllStag = indicesAllStagDomain dmapped new stencilDist(indicesAllStagDomain, fluff=(this.nghosts,), periodic=false);
-            init this; 
-            this.create_grid(); 
+            init this;
+            if npoints>1 then
+                this.create_grid(); 
+        }
+
+        proc deepCopy (grid: borrowed Grid(?)): void {
+            grid.xmin = this.xmin;
+            grid.xmax = this.xmax;
+            grid.nghosts = this.nghosts; 
+            grid.npoints_int = this.npoints_int;           
+            grid.indx_beg_int = this.nghosts+1;
+            grid.indx_end_int = this.npoints_int + this.indx_beg_int;
+            grid.indx_beg_tot = 1;
+            grid.indx_end_tot = this.npoints_int + 2*this.nghosts;
+            grid.npoints_tot  = this.indx_end_tot;
+            var indicesInnerDomain: domain(1) = {1..this.npoints_int};
+            grid.indicesInner = indicesInnerDomain dmapped new stencilDist(indicesInnerDomain, fluff=(this.nghosts,), periodic=false);
+            grid.indicesAll = indicesInnerDomain.expand((this.nghosts,));
+            var indicesAllStagDomain: domain(1) = {this.indicesAll.low..this.indicesAll.high+1};
+            grid.indicesAllStag = indicesAllStagDomain dmapped new stencilDist(indicesAllStagDomain, fluff=(this.nghosts,), periodic=false);
+            forall i in grid.indicesAllStag do
+                grid.walls_tot[i] = this.walls_tot[i];
+            forall i in grid.indicesAll do
+                grid.cells_tot[i] = this.cells_tot[i];
+            // XXX: might not need this and removing this can improve performance
+            sync grid.walls_tot.updateFluff();
+            sync grid.cells_tot.updateFluff();
         }
 
         proc create_grid (): void {

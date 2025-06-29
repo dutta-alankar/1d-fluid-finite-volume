@@ -1,4 +1,5 @@
 module conversion {
+    use globals;
     use structures;
 
     proc consv_to_prims (grid: borrowed Grid(?), only_boundary: bool=false, only_cell: bool=false, cell_id:int(64)=0): void {

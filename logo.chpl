@@ -1,4 +1,5 @@
 module logo {
+    use globals;
 
     proc print_logo (): void {
         // **CHHA** *Chapel-based Hydrodynamics for Astrophysical Applications*

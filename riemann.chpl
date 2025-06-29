@@ -1,4 +1,5 @@
 module riemann {
+    use globals;
     use structures;
 
     /* riemann solver for the advection problem with constant velocity */
@@ -25,7 +26,8 @@ module riemann {
         var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
         forall i in grid.indicesAll {
             // if debug then writeln("i = ", i, ", flag = ", grid.cells_tot[i].solve_flag, " ", computeDomain.high+1);
-            if !grid.cells_tot[i].solve_flag && i!=(computeDomain.high+1) then continue;
+            // XXX: check to see if it works if I have non-ative cells in the domain
+            if !grid.cells_tot[i].solve_flag && !(i>=computeDomain.low && i<=(computeDomain.high+1)) then continue;
             var solution_consv: [state_domain] real(64) = solver_advect (grid.walls_tot[i], vel);
             var flux_solve: [state_domain] real(64) = calc_flux(solution_consv, vel);
             /*
@@ -34,7 +36,7 @@ module riemann {
                 if flux_solve[state_var]<0 then flux_solve[state_var] = 0.0;
             }
             */
-            if debug then writeln("i = ", i, ": consv_state: ", solution_consv, " flux: ", flux_solve);
+            // if debug then writeln("i = ", i, ": consv_state: ", solution_consv, " flux: ", flux_solve);
             for state_var in state_domain {
                 grid.walls_tot[i].state_consv_solve[state_var] =  solution_consv[state_var];
                 grid.walls_tot[i].flux_solve[state_var]  = flux_solve[state_var];
@@ -50,5 +52,18 @@ module riemann {
         }
         sync grid.walls_tot.updateFluff();
         sync grid.cells_tot.updateFluff();
+        /*
+        write("Reimann: ");
+        write("[");
+        for i in grid.indicesAll {
+            // if debug then writeln("i = ", i, ", flag = ", grid.cells_tot[i].solve_flag, " ", computeDomain.high+1);
+            // XXX: check to see if it works if I have non-ative cells in the domain
+            if !grid.cells_tot[i].solve_flag && !(i>=computeDomain.low && i<=(computeDomain.high+1)) then continue;
+            for state_var in state_domain {
+                write(grid.walls_tot[i].flux_solve[state_var], ", ");
+            }
+        }
+        writeln("\b\b]");
+        */
     }
 }
