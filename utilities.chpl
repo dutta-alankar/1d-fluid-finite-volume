@@ -1,5 +1,6 @@
 module utilities {
     use IO;
+    use Math;
 
     proc linspace(start: real(64), stop: real(64), num: int(64), D: domain(?)): [D] real(64) {
         assert(D.rank == 1, "Domain must be one-dimensional 'rank'="+D.rank:string+"!=1");

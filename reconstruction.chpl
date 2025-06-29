@@ -1,10 +1,13 @@
 module reconstruction {
     use globals;
     use structures;
+    use utilities;
+    use limiters;
     use Math;
 
     var reconstruction_coeff_domain: domain(1);
     var reconstruction_coeff: [reconstruction_coeff_domain] real(64);
+    var use_slope_limiter: bool = true;
     
     proc compute_nghost(const ref reconstruction_type: string ): int(64) {
         if reconstruction_type=="constant" {
@@ -52,8 +55,20 @@ module reconstruction {
                     var factor: real(64) = 0.0;
                     if j==reconstruction_coeff.domain.low then 
                         factor = grid.cells_tot[i].state_consv_center[state_var];
-                    else if j==(reconstruction_coeff.domain.low+1) then {
-                        factor = grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var];
+                    else if j==(reconstruction_coeff.domain.low+1) {
+                        if !use_slope_limiter then
+                            factor = grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var];
+                        else if slope_limiter=="minmod" then
+                            factor = 2*minmod(grid.cells_tot[i].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var],
+                                              grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i].state_consv_center[state_var]);
+                        else if slope_limiter=="mc" then
+                            factor = mc_lim(grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var],
+                                          2*grid.cells_tot[i+1].state_consv_center[state_var] - grid.cells_tot[i].state_consv_center[state_var],
+                                          2*grid.cells_tot[i].state_consv_center[state_var] - grid.cells_tot[i-1].state_consv_center[state_var]);
+                        else {
+                            writeln("Slope limiter ", slope_limiter, " is not supported!");
+                            exit(1);
+                        }
                     }
                     else
                         factor = 0.0;
