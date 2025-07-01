@@ -30,14 +30,14 @@ proc main(args: [] string) {
     print_logo();
     warnings();
     var w: Wall;
-    const nghosts: int(64) = compute_nghost(reconstruction_type);
-    var grid = new owned Grid(xmin, xmax, npoints, nghosts);
-    var computeDomain: domain(1) = {grid.indicesInner.low..grid.indicesInner.high};
+    const nghosts: (int(64), int(64), int(64)) = compute_nghost(reconstruction_type);
+    var grid = new owned Grid((xmin_x, xmin_y, xmin_z), (xmax_x, xmax_y, xmax_z), (npoints_x, npoints_y, npoints_z), nghosts);
+    var computeDomain: domain(3) = {grid.indicesInner.low[0]..grid.indicesInner.high[0], grid.indicesInner.low[1]..grid.indicesInner.high[1], grid.indicesInner.low[2]..grid.indicesInner.high[2]};
 
     var stepNumber: int(64) = 0;
     var time: real(64) = t_start;
     var delta_t: real(64) = dt_ini;
-    var cell_size_min: real(64) = min reduce [c in grid.cells_tot] c.cell_size;
+    var cell_size_min: real(64) = min(min reduce [c in grid.cells_tot] c.cell_size[0], min reduce [c in grid.cells_tot] c.cell_size[1], min reduce [c in grid.cells_tot] c.cell_size[2]);
     if debug then writeln("Min cell size: ", cell_size_min, ", ghosts: ", nghosts);
 
     sync prepare_run(grid);
@@ -57,7 +57,7 @@ proc main(args: [] string) {
       /* computation for each loop ends here */
       stepNumber += 1;
       time += delta_t;
-      delta_t = cfl*cell_size_min/vel_adv;
+      delta_t = cfl*cell_size_min/max(abs(vel_adv_x), abs(vel_adv_y), abs(vel_adv_z));
       if delta_t>dt_max then delta_t = dt_max;
       if stepNumber%freq==0 || stepNumber==max_steps then 
         writeln("time ", time, " (step ", stepNumber ,"): dt = ", delta_t);
